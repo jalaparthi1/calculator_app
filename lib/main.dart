@@ -22,48 +22,91 @@ class CalculatorScreen extends StatefulWidget {
 }
 
 class _CalculatorScreenState extends State<CalculatorScreen> {
-  String _display = '';
-  double _num1 = 0;
-  double _num2 = 0;
-  String _operator = '';
+  String _display = '0'; // Default to '0' instead of empty string
+  double? _num1;
+  double? _num2;
+  String? _operator;
+  bool _isTypingSecondNumber = false; // Fixes disappearing numbers
 
   void _onButtonPressed(String value) {
     setState(() {
       if (value == 'C') {
-        _display = '';
-        _num1 = 0;
-        _num2 = 0;
-        _operator = '';
-      } else if (value == '+' || value == '-' || value == '*' || value == '/') {
-        if (_display.isNotEmpty) {
-          _num1 = double.parse(_display);
-          _operator = value;
-          _display = '';
+        _display = '0';
+        _num1 = null;
+        _num2 = null;
+        _operator = null;
+        _isTypingSecondNumber = false;
+      } else if (value == '⌫') {
+        if (_display.length > 1) {
+          _display = _display.substring(0, _display.length - 1);
+        } else {
+          _display = '0';
         }
-      } else if (value == '=') {
-        if (_operator.isNotEmpty && _display.isNotEmpty) {
+      } else if (value == '+/-') {
+        if (_display != '0') {
+          _display =
+              _display.startsWith('-') ? _display.substring(1) : '-$_display';
+        }
+      } else if (value == '.' && !_display.contains('.')) {
+        _display += value;
+      } else if (value == '+' || value == '-' || value == '*' || value == '/') {
+        if (_num1 == null) {
+          _num1 = double.parse(_display);
+        } else if (_operator != null && _isTypingSecondNumber) {
           _num2 = double.parse(_display);
-          switch (_operator) {
-            case '+':
-              _display = (_num1 + _num2).toString();
-              break;
-            case '-':
-              _display = (_num1 - _num2).toString();
-              break;
-            case '*':
-              _display = (_num1 * _num2).toString();
-              break;
-            case '/':
-              _display =
-                  _num2 != 0 ? (_num1 / _num2).toStringAsFixed(2) : 'Error';
-              break;
-          }
-          _operator = '';
+          _num1 = _calculateResult();
+          _display = _formatResult(_num1!);
+        }
+        _operator = value;
+        _isTypingSecondNumber = true; // Start entering the second number
+      } else if (value == '=') {
+        if (_operator != null && _num1 != null) {
+          _num2 = double.parse(_display);
+          _display = _formatResult(_calculateResult());
+          _num1 = null;
+          _operator = null;
+          _isTypingSecondNumber = false;
         }
       } else {
-        _display += value;
+        if (_display == '0' || _isTypingSecondNumber) {
+          _display = value; // Replace screen text if starting a new number
+          _isTypingSecondNumber = false;
+        } else {
+          _display += value;
+        }
       }
     });
+  }
+
+  double _calculateResult() {
+    double result = 0;
+    if (_num1 != null && _num2 != null) {
+      switch (_operator) {
+        case '+':
+          result = _num1! + _num2!;
+          break;
+        case '-':
+          result = _num1! - _num2!;
+          break;
+        case '*':
+          result = _num1! * _num2!;
+          break;
+        case '/':
+          result = _num2 != 0 ? _num1! / _num2! : double.nan;
+          break;
+      }
+    }
+    return result;
+  }
+
+  String _formatResult(double result) {
+    if (result.isNaN) {
+      return "Error";
+    } else if (result == result.toInt()) {
+      return result.toInt().toString(); // Remove decimal if whole number
+    } else {
+      return result.toStringAsFixed(2); // Limit to 2 decimal places
+    }
   }
 
   Widget _buildButton(String text, Color color) {
@@ -116,10 +159,11 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
             ),
             child: Column(
               children: [
-                _buildRow(['7', '8', '9', '/'], Colors.orange),
-                _buildRow(['4', '5', '6', '*'], Colors.orange),
-                _buildRow(['1', '2', '3', '-'], Colors.orange),
-                _buildRow(['C', '0', '=', '+'], Colors.orange),
+                _buildRow(['C', '⌫', '+/-', '/'], Colors.redAccent),
+                _buildRow(['7', '8', '9', '*'], Colors.orange),
+                _buildRow(['4', '5', '6', '-'], Colors.orange),
+                _buildRow(['1', '2', '3', '+'], Colors.orange),
+                _buildRow(['.', '0', '='], Colors.green),
               ],
             ),
           ),
