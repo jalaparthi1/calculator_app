@@ -43,15 +43,6 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
           _input = _input.substring(0, _input.length - 1);
           _display = _input.isEmpty ? '0' : _input;
         }
-      } else if (value == '+/-') {
-        if (_input.isNotEmpty) {
-          if (_input.startsWith('-')) {
-            _input = _input.substring(1);
-          } else {
-            _input = '-$_input';
-          }
-          _display = _input;
-        }
       }
       // ✅ Prevent multiple decimals in the same number
       else if (value == '.') {
@@ -140,14 +131,14 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
     return ElevatedButton(
       onPressed: () => _onButtonPressed(text),
       style: ElevatedButton.styleFrom(
-        padding: EdgeInsets.all(20),
+        padding: EdgeInsets.all(24),
         shape: CircleBorder(),
         backgroundColor: color,
       ),
       child: Text(
         text,
         style: TextStyle(
-            fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
+            fontSize: 26, fontWeight: FontWeight.bold, color: Colors.white),
       ),
     );
   }
@@ -171,7 +162,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
               child: Text(
                 _display,
                 style: TextStyle(
-                    fontSize: 48,
+                    fontSize: 50,
                     fontWeight: FontWeight.bold,
                     color: Colors.white),
               ),
@@ -186,11 +177,15 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
             ),
             child: Column(
               children: [
-                _buildRow(['C', '⌫', '+/-', '/'], Colors.redAccent),
-                _buildRow(['7', '8', '9', '*'], Colors.orange),
-                _buildRow(['4', '5', '6', '-'], Colors.orange),
-                _buildRow(['1', '2', '3', '+'], Colors.orange),
-                _buildRow(['.', '0', '='], Colors.green),
+                _buildRow(['C', '⌫', '/', '*'],
+                    Colors.redAccent), // ✅ Clear & operators
+                _buildRow(
+                    ['7', '8', '9', '-'], Colors.lightBlueAccent), // ✅ Numbers
+                _buildRow(
+                    ['4', '5', '6', '+'], Colors.lightBlueAccent), // ✅ Numbers
+                _buildRow(
+                    ['1', '2', '3', '='], Colors.lightBlueAccent), // ✅ Numbers
+                _buildRow(['.', '0'], Colors.grey), // ✅ Decimal & Zero
               ],
             ),
           ),
