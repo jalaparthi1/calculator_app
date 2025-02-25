@@ -22,11 +22,11 @@ class CalculatorScreen extends StatefulWidget {
 }
 
 class _CalculatorScreenState extends State<CalculatorScreen> {
-  String _display = '0'; // Default to '0' instead of empty string
+  String _display = '0'; // Display for full expression
   double? _num1;
   double? _num2;
   String? _operator;
-  bool _isTypingSecondNumber = false; // Fixes disappearing numbers
+  bool _isTypingSecondNumber = false;
 
   void _onButtonPressed(String value) {
     setState(() {
@@ -43,33 +43,40 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
           _display = '0';
         }
       } else if (value == '+/-') {
-        if (_display != '0') {
+        if (_display.isNotEmpty && !_display.contains(' ')) {
           _display =
               _display.startsWith('-') ? _display.substring(1) : '-$_display';
         }
-      } else if (value == '.' && !_display.contains('.')) {
-        _display += value;
+      }
+      // ✅ Fix: Prevent multiple decimal points in a single number
+      else if (value == '.') {
+        List<String> parts = _display.split(' '); // Split by operators
+        String lastPart = parts.last; // Get last number
+        if (!lastPart.contains('.')) {
+          _display += value;
+        }
       } else if (value == '+' || value == '-' || value == '*' || value == '/') {
         if (_num1 == null) {
           _num1 = double.parse(_display);
+          _display += ' $value '; // Show operator on screen
         } else if (_operator != null && _isTypingSecondNumber) {
-          _num2 = double.parse(_display);
+          _num2 = double.parse(_display.split(' ').last);
           _num1 = _calculateResult();
-          _display = _formatResult(_num1!);
+          _display = _num1!.toString() + ' $value ';
         }
         _operator = value;
-        _isTypingSecondNumber = true; // Start entering the second number
+        _isTypingSecondNumber = true;
       } else if (value == '=') {
         if (_operator != null && _num1 != null) {
-          _num2 = double.parse(_display);
-          _display = _formatResult(_calculateResult());
+          _num2 = double.parse(_display.split(' ').last);
+          _display = _calculateResult().toString();
           _num1 = null;
           _operator = null;
           _isTypingSecondNumber = false;
         }
       } else {
         if (_display == '0' || _isTypingSecondNumber) {
-          _display = value; // Replace screen text if starting a new number
+          _display = value;
           _isTypingSecondNumber = false;
         } else {
           _display += value;
@@ -97,16 +104,6 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
       }
     }
     return result;
-  }
-
-  String _formatResult(double result) {
-    if (result.isNaN) {
-      return "Error";
-    } else if (result == result.toInt()) {
-      return result.toInt().toString(); // Remove decimal if whole number
-    } else {
-      return result.toStringAsFixed(2); // Limit to 2 decimal places
-    }
   }
 
   Widget _buildButton(String text, Color color) {
