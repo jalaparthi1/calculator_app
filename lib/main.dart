@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:math';
 
 void main() {
   runApp(CalculatorApp());
@@ -22,7 +23,8 @@ class CalculatorScreen extends StatefulWidget {
 }
 
 class _CalculatorScreenState extends State<CalculatorScreen> {
-  String _display = '0'; // Display for full expression
+  String _display = '0'; // Full expression shown
+  String _input = ''; // Keeps track of user input
   double? _num1;
   double? _num2;
   String? _operator;
@@ -32,55 +34,62 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
     setState(() {
       if (value == 'C') {
         _display = '0';
+        _input = '';
         _num1 = null;
         _num2 = null;
         _operator = null;
         _isTypingSecondNumber = false;
       } else if (value == '⌫') {
-        if (_display.length > 1) {
-          _display = _display.substring(0, _display.length - 1);
-        } else {
-          _display = '0';
+        if (_input.isNotEmpty) {
+          _input = _input.substring(0, _input.length - 1);
+          _display = _input.isEmpty ? '0' : _input;
         }
       } else if (value == '+/-') {
-        if (_display.isNotEmpty && !_display.contains(' ')) {
-          _display =
-              _display.startsWith('-') ? _display.substring(1) : '-$_display';
+        if (_input.isNotEmpty) {
+          if (_input.startsWith('-')) {
+            _input = _input.substring(1);
+          } else {
+            _input = '-$_input';
+          }
+          _display = _input;
         }
       }
-      // ✅ Fix: Prevent multiple decimal points in a single number
+      // ✅ Prevent multiple decimals in the same number
       else if (value == '.') {
-        List<String> parts = _display.split(' '); // Split by operators
-        String lastPart = parts.last; // Get last number
-        if (!lastPart.contains('.')) {
-          _display += value;
+        List<String> parts =
+            _input.split(RegExp(r'[\+\-\*/]')); // Split by operators
+        if (!parts.last.contains('.')) {
+          _input += value;
+          _display = _input;
         }
       } else if (value == '+' || value == '-' || value == '*' || value == '/') {
         if (_num1 == null) {
-          _num1 = double.parse(_display);
-          _display += ' $value '; // Show operator on screen
+          _num1 = double.tryParse(_input) ?? 0;
         } else if (_operator != null && _isTypingSecondNumber) {
-          _num2 = double.parse(_display.split(' ').last);
+          _num2 = double.tryParse(_input.split(RegExp(r'[\+\-\*/]')).last) ?? 0;
           _num1 = _calculateResult();
-          _display = _num1!.toString() + ' $value ';
         }
         _operator = value;
         _isTypingSecondNumber = true;
+        _input += ' $value ';
+        _display = _input;
       } else if (value == '=') {
         if (_operator != null && _num1 != null) {
-          _num2 = double.parse(_display.split(' ').last);
+          _num2 = double.tryParse(_input.split(RegExp(r'[\+\-\*/]')).last) ?? 0;
           _display = _calculateResult().toString();
+          _input = _display;
           _num1 = null;
           _operator = null;
           _isTypingSecondNumber = false;
         }
       } else {
         if (_display == '0' || _isTypingSecondNumber) {
-          _display = value;
+          _input = value;
           _isTypingSecondNumber = false;
         } else {
-          _display += value;
+          _input += value;
         }
+        _display = _input;
       }
     });
   }
@@ -103,7 +112,17 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
           break;
       }
     }
-    return result;
+    return _formatPrecision(result);
+  }
+
+  // ✅ Ensures decimal precision is correct
+  double _formatPrecision(double value) {
+    if (value.isNaN) {
+      return double.nan;
+    }
+    String valueStr = value.toString();
+    return double.parse(
+        valueStr.length > 15 ? valueStr.substring(0, 15) : valueStr);
   }
 
   Widget _buildButton(String text, Color color) {
