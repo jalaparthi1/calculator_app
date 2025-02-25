@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:math';
 
 void main() {
   runApp(CalculatorApp());
@@ -76,7 +75,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
       } else if (value == '=') {
         if (_operator != null && _num1 != null) {
           _num2 = double.tryParse(_input.split(RegExp(r'[\+\-\*/]')).last) ?? 0;
-          _display = _calculateResult().toString();
+          _display = _calculateResultAsString();
           _input = _display;
           _num1 = null;
           _operator = null;
@@ -108,11 +107,23 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
           result = _num1! * _num2!;
           break;
         case '/':
-          result = _num2 != 0 ? _num1! / _num2! : double.nan;
+          if (_num2 == 0) {
+            return double.nan; // ✅ Return NaN to indicate division by zero
+          }
+          result = _num1! / _num2!;
           break;
       }
     }
     return _formatPrecision(result);
+  }
+
+  // ✅ Returns "Error" when division by zero happens
+  String _calculateResultAsString() {
+    double result = _calculateResult();
+    if (result.isNaN) {
+      return "Error"; // ✅ Display "Error" instead of NaN
+    }
+    return result.toString();
   }
 
   // ✅ Ensures decimal precision is correct
